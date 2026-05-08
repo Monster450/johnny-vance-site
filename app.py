@@ -191,6 +191,15 @@ def handle_error(e):
     app.logger.error(f"Ошибка: {str(e)}")
     return f"Ошибка: {str(e)}", 500
 
+# Создание таблиц при запуске (для gunicorn)
+with app.app_context():
+    db.create_all()
+
+# Принудительное создание таблиц при первом запросе
+@app.before_request
+def ensure_tables():
+    db.create_all()
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
