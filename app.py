@@ -203,6 +203,22 @@ with app.app_context():
 def ensure_tables():
     db.create_all()
 
+@app.route('/comment/delete/<int:comment_id>')
+@login_required
+def delete_comment(comment_id):
+    # Проверяем, что пользователь админ или владелец
+    if not current_user.is_admin():
+        flash('У вас нет прав на удаление комментариев', 'danger')
+        return redirect(request.referrer or url_for('index'))
+    
+    comment = Comment.query.get_or_404(comment_id)
+    post_id = comment.post_id
+    db.session.delete(comment)
+    db.session.commit()
+    
+    flash('Комментарий удалён', 'success')
+    return redirect(url_for('post_detail', post_id=post_id))
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
