@@ -37,6 +37,9 @@ class User(UserMixin, db.Model):
     def is_admin(self):
         return self.role in ('admin', 'owner')
     
+    def is_user(self):
+        return self.role in ('user', 'admin', 'owner')
+    
     def can_create_post(self):
         return self.role in ('admin', 'owner')
     
