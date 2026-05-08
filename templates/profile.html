@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="display-1 mb-3">
+                    {% if current_user.role == 'owner' %}👑
+                    {% elif current_user.role == 'admin' %}⭐
+                    {% elif current_user.role == 'user' %}👤
+                    {% else %}📖{% endif %}
+                </div>
+                <h3>{{ current_user.username }}</h3>
+                <p class="text-muted">
+                    {% if current_user.role == 'owner' %}👑 Владелец
+                    {% elif current_user.role == 'admin' %}⭐ Админ
+                    {% elif current_user.role == 'user' %}👤 Пользователь
+                    {% else %}📖 Читатель{% endif %}
+                </p>
+                <hr>
+                <p><strong>📧 Email:</strong> {{ current_user.email }}</p>
+                <p><strong>📅 Дата регистрации:</strong> {{ current_user.created_at.strftime('%d.%m.%Y') }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">ℹ️ Информация</h5>
+            </div>
+            <div class="card-body">
+                {% if current_user.role == 'owner' %}
+                    <div class="alert alert-warning">👑 Вы — владелец сайта. У вас есть все права.</div>
+                {% elif current_user.role == 'admin' %}
+                    <div class="alert alert-info">⭐ Вы — администратор. Можете управлять пользователями и создавать посты.</div>
+                {% else %}
+                    <div class="alert alert-secondary">👤 Вы — пользователь. Можете смотреть публикации и оставлять комментарии.</div>
+                {% endif %}
+                
+                <h6>Ваши права:</h6>
+                <ul>
+                    <li>✅ Просмотр публикаций</li>
+                    {% if current_user.role != 'reader' %}
+                        <li>✅ Оставление комментариев</li>
+                    {% endif %}
+                    {% if current_user.role in ['admin', 'owner'] %}
+                        <li>✅ Создание постов и фото</li>
+                    {% endif %}
+                    {% if current_user.role == 'owner' %}
+                        <li>✅ Публикация видео (только владелец)</li>
+                    {% endif %}
+                    {% if current_user.role in ['admin', 'owner'] %}
+                        <li>✅ Управление пользователями (назначение ролей)</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

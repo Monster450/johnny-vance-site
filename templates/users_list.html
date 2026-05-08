@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователи{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>👥 Все пользователи</h1>
+    <span class="badge bg-primary">Всего: {{ users|length }}</span>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Пользователь</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Дата регистрации</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>
+                        <strong>{{ user.username }}</strong>
+                        {% if user.is_owner() %} 👑{% endif %}
+                    </td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if user.role == 'owner' %}bg-warning text-dark
+                            {% elif user.role == 'admin' %}bg-info
+                            {% else %}bg-secondary{% endif %}">
+                            {{ user.role_display() }}
+                        </span>
+                    </td>
+                    <td>{{ user.created_at.strftime('%d.%m.%Y') }}</td>
+                    <td>
+                        {% if not user.is_owner() and current_user.is_admin() %}
+                        <form method="POST" action="{{ url_for('set_role', user_id=user.id) }}" style="display: inline;">
+                            <select name="role" class="form-select form-select-sm d-inline w-auto">
+                                <option value="user" {% if user.role == 'user' %}selected{% endif %}>Пользователь</option>
+                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Админ</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Изменить</button>
+                        </form>
+                        {% elif user.is_owner() %}
+                        <span class="text-muted">Владелец</span>
+                        {% elif not current_user.is_admin() %}
+                        <span class="text-muted">Нет прав</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

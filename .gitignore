@@ -1,0 +1,5 @@
+site.db
+__pycache__/
+instance/
+.env
+*.рус

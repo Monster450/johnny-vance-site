@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Создать пост{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    {% if current_user.can_upload_video() %}
+                        ✏️ Создать публикацию
+                    {% else %}
+                        ✏️ Создать пост или фото
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Тип публикации</label>
+                        <select name="post_type" id="post_type" class="form-select" onchange="toggleFields()">
+                            <option value="post">📝 Текстовый пост</option>
+                            <option value="photo">📷 Фото</option>
+                            {% if current_user.can_upload_video() %}
+                            <option value="video">🎬 Видео</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Заголовок</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    
+                    <div class="mb-3" id="content_field">
+                        <label for="content" class="form-label">Текст</label>
+                        <textarea class="form-control" id="content" name="content" rows="8" placeholder="Текст публикации..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3" id="image_field" style="display: none;">
+                        <label for="image_url" class="form-label">Ссылка на изображение</label>
+                        <input type="url" class="form-control" id="image_url" name="image_url" placeholder="https://example.com/image.jpg">
+                        <small class="text-muted">Вставьте прямую ссылку на картинку (imgur, imgbb и т.д.)</small>
+                    </div>
+                    
+                    <div class="mb-3" id="video_field" style="display: none;">
+                        <label for="video_url" class="form-label">Ссылка на видео</label>
+                        <input type="url" class="form-control" id="video_url" name="video_url" placeholder="https://www.youtube.com/embed/... или https://rutube.ru/...">
+                        <small class="text-muted">Поддерживается вставка iframe или ссылка на YouTube/Rutube</small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100">Опубликовать</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleFields() {
+    const type = document.getElementById('post_type').value;
+    document.getElementById('content_field').style.display = type === 'post' ? 'block' : 'none';
+    document.getElementById('image_field').style.display = type === 'photo' ? 'block' : 'none';
+    document.getElementById('video_field').style.display = type === 'video' ? 'block' : 'none';
+}
+</script>
+{% endblock %}
