@@ -4,15 +4,19 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
+import logging
+import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'supersecretkey'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'secretkey123')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# -----------------– МОДЕЛИ –-----------------
+logging.basicConfig(level=logging.DEBUG)
+
+# Модели
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -32,13 +36,12 @@ class User(UserMixin, db.Model):
 
     def is_admin(self):
         return self.role in ('admin', 'owner')
-
+    
     def can_create_post(self):
         return self.role in ('admin', 'owner')
-
+    
     def can_upload_video(self):
         return self.role == 'owner'
-
 
 class Post(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -63,7 +66,6 @@ class Comment(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# -----------------– ДЕКОРАТОРЫ –-----------------
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -73,16 +75,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-def owner_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_owner():
-            flash('Доступ только для владельца', 'danger')
-            return redirect(url_for('index'))
-        return f(*args, **kwargs)
-    return decorated
-
-# -----------------– МАРШРУТЫ –-----------------
+# Маршруты
 @app.route('/')
 def index():
     posts = Post.query.order_by(Post.created_at.desc()).all()
@@ -174,24 +167,29 @@ def logout():
     return redirect(url_for('index'))
 
 @app.route('/admin')
-@admin_required
+@login_required
 def admin_panel():
+    if not current_user.is_admin():
+        return 'Доступ запрещён', 403
     users = User.query.all()
     return render_template('admin_panel.html', users=users)
 
 @app.route('/admin/set_role/<int:user_id>', methods=['POST'])
-@admin_required
+@login_required
 def set_role(user_id):
+    if not current_user.is_admin():
+        return 'Доступ запрещён', 403
     target = User.query.get_or_404(user_id)
-    if target.is_owner():
-        flash('Нельзя изменить владельца', 'danger')
-        return redirect(url_for('admin_panel'))
-    new_role = request.form.get('role')
-    if new_role in ('user', 'admin'):
-        target.role = new_role
-        db.session.commit()
-        flash(f'Роль {target.username} изменена', 'success')
+    if target.is_owner() or target.id == current_user.id:
+        return 'Нельзя изменить эту роль', 403
+    target.role = request.form.get('role')
+    db.session.commit()
     return redirect(url_for('admin_panel'))
+
+@app.errorhandler(Exception)
+def handle_error(e):
+    app.logger.error(f"Ошибка: {str(e)}")
+    return f"Ошибка: {str(e)}", 500
 
 if __name__ == '__main__':
     with app.app_context():
